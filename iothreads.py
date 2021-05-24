@@ -6,7 +6,6 @@ class InputThread(threading.Thread):
     threading.Thread.__init__(self)
     self.port = port
     self.ticks = 0
-    self.eighth_note = 0
   
   def run(self):
     with mido.open_input(self.port) as input:
