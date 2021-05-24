@@ -6,24 +6,25 @@ class InputThread(threading.Thread):
   def __init__(self, port):
     threading.Thread.__init__(self)
     self.port = port
-    self.messages = []
+    self.ticks = 0
+    self.eighth_note = 0
   
   def run(self):
     with mido.open_input(self.port) as input:
-      for msg in input:
-        self.messages.append(self.parse_message(msg))
-
-  def receive(self):
-    return self.messages.pop() if self.messages else None
+      for message in map(self.parse_message, input):
+        if message["type"] == "clock":
+          self.ticks += 1
+        elif message["type"] == "songpos":
+          self.ticks = int(message["pos"])
+        else: 
+          print(message)
 
   def parse_message(self, message):
     data = str(message).split(" ")
     output = {}
     for i, x in enumerate(data):
-      if i == 0:
-        output["type"] = x
-      else:
-        output[x.split("=")[0]] = x.split("=")[1]
+      if i == 0: output["type"] = x
+      else: output[x.split("=")[0]] = x.split("=")[1]
     return output
 
 
@@ -54,9 +55,4 @@ output.start()
 ticks = 0
 eighth_note = 0
 
-while True:
-  try:
-    print(input.receive())
-  except KeyboardInterrupt:
-    output.send(mido.Message('note_off', note=72))
-    break
+old_message = None
